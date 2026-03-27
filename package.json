@@ -1,0 +1,25 @@
+{
+  "name": "todo-app",
+  "version": "1.0.0",
+  "description": "Simple todo app built with plain HTML, CSS, and JavaScript.",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "test": "echo \"No tests configured\""
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/test-wali-org/todo-app.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/test-wali-org/todo-app/issues"
+  },
+  "homepage": "https://github.com/test-wali-org/todo-app#readme",
+  "dependencies": {
+    "express": "^5.2.1"
+  }
+}

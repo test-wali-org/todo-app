@@ -101,6 +101,15 @@ h1 {
   font-size: 0.95rem;
 }
 
+.status-message {
+  margin: 0.65rem 0 0;
+  font-size: 0.9rem;
+}
+
+.status-message.error {
+  color: #b91c1c;
+}
+
 .hidden {
   display: none;
 }

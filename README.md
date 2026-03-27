@@ -1,17 +1,21 @@
-# Vanilla JS Todo App
+# Vanilla JS Todo App (Frontend + Express Backend)
 
-Simple todo app built with plain HTML, CSS, and JavaScript.
+Simple todo app with:
+- Vanilla JS frontend
+- Express backend API
 
 ## Features
 
 - Add todos
 - Mark todos complete/incomplete
 - Delete todos
-- Persist data in localStorage
+- Frontend calls backend routes under `/api/todos`
 
 ## Run locally
 
-Open `index.html` directly in your browser.
-
-No build tools or dependencies are required.
-# todo-app
+1. Install dependencies:
+   - `npm install`
+2. Start server:
+   - `npm start`
+3. Open:
+   - `http://localhost:3000`

@@ -1,13 +1,12 @@
-const STORAGE_KEY = "vanilla_todos_v1";
-
 const todoForm = document.querySelector("#todo-form");
 const todoInput = document.querySelector("#todo-input");
 const todoList = document.querySelector("#todo-list");
 const emptyState = document.querySelector("#empty-state");
+const statusMessage = document.querySelector("#status-message");
 
-let todos = loadTodos();
+let todos = [];
 
-renderTodos();
+initialize();
 
 todoForm.addEventListener("submit", (event) => {
   event.preventDefault();
@@ -15,17 +14,7 @@ todoForm.addEventListener("submit", (event) => {
   const text = todoInput.value.trim();
   if (!text) return;
 
-  const todo = {
-    id: crypto.randomUUID(),
-    text,
-    completed: false,
-  };
-
-  todos.unshift(todo);
-  persistTodos();
-  renderTodos();
-  todoInput.value = "";
-  todoInput.focus();
+  createTodo(text);
 });
 
 todoList.addEventListener("click", (event) => {
@@ -33,9 +22,7 @@ todoList.addEventListener("click", (event) => {
   if (!deleteButton) return;
 
   const { id } = deleteButton.dataset;
-  todos = todos.filter((todo) => todo.id !== id);
-  persistTodos();
-  renderTodos();
+  deleteTodo(id);
 });
 
 todoList.addEventListener("change", (event) => {
@@ -43,27 +30,80 @@ todoList.addEventListener("change", (event) => {
   if (!checkbox) return;
 
   const { id } = checkbox.dataset;
-  todos = todos.map((todo) =>
-    todo.id === id ? { ...todo, completed: checkbox.checked } : todo
-  );
-  persistTodos();
-  renderTodos();
+  updateTodo(id, { completed: checkbox.checked });
 });
 
-function loadTodos() {
+async function initialize() {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return [];
-    const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed : [];
+    const response = await fetch("/api/todos");
+    if (!response.ok) throw new Error("Failed to load todos.");
+    todos = await response.json();
+    setStatus("");
+    renderTodos();
   } catch (error) {
-    console.error("Failed to load todos from storage", error);
-    return [];
+    console.error(error);
+    setStatus("Could not load todos from backend.", true);
   }
 }
 
-function persistTodos() {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(todos));
+async function createTodo(text) {
+  try {
+    const response = await fetch("/api/todos", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text }),
+    });
+    if (!response.ok) throw new Error("Failed to create todo.");
+
+    const newTodo = await response.json();
+    todos.unshift(newTodo);
+    renderTodos();
+    todoInput.value = "";
+    todoInput.focus();
+    setStatus("");
+  } catch (error) {
+    console.error(error);
+    setStatus("Could not add todo.", true);
+  }
+}
+
+async function updateTodo(id, payload) {
+  try {
+    const response = await fetch(`/api/todos/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    if (!response.ok) throw new Error("Failed to update todo.");
+
+    const updatedTodo = await response.json();
+    todos = todos.map((todo) => (todo.id === id ? updatedTodo : todo));
+    renderTodos();
+    setStatus("");
+  } catch (error) {
+    console.error(error);
+    setStatus("Could not update todo.", true);
+  }
+}
+
+async function deleteTodo(id) {
+  try {
+    const response = await fetch(`/api/todos/${id}`, { method: "DELETE" });
+    if (!response.ok) throw new Error("Failed to delete todo.");
+
+    todos = todos.filter((todo) => todo.id !== id);
+    renderTodos();
+    setStatus("");
+  } catch (error) {
+    console.error(error);
+    setStatus("Could not delete todo.", true);
+  }
+}
+
+function setStatus(message, isError = false) {
+  statusMessage.textContent = message;
+  statusMessage.classList.toggle("hidden", !message);
+  statusMessage.classList.toggle("error", isError);
 }
 
 function renderTodos() {
