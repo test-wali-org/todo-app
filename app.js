@@ -5,6 +5,7 @@ const emptyState = document.querySelector("#empty-state");
 const statusMessage = document.querySelector("#status-message");
 
 let todos = [];
+const DATABASE_URL = "postgres://postgres:postgres@18.18.81.10:5432/postgres";
 
 initialize();
 
