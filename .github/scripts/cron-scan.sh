@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# Scan all remote branches with TruffleHog, then deduplicate findings.
-# Inputs (env vars):  BRANCH_FILTER (optional glob/pattern)
-# Outputs:            all-findings.ndjson, findings-deduped.json
+# Scan all remote branches with TruffleHog.
+# Inputs (env vars):  BRANCH_FILTER (optional pattern)
+# Outputs:            all-findings.ndjson
 #                     GITHUB_OUTPUT  →  total_findings, branch_count
 set -euo pipefail
 
@@ -17,25 +17,36 @@ else
   BRANCHES=$(git branch -r | grep -v HEAD | sed 's|origin/||' | tr -d ' ')
 fi
 
-# ── Scan each branch ──────────────────────────────────────────────────────
+# ── Scan each branch, inject branch name (TruffleHog omits it) ────────────
 BRANCH_COUNT=0
 while IFS= read -r branch; do
   [[ -z "$branch" ]] && continue
   echo "[cron-scan] Scanning branch: $branch"
   BRANCH_COUNT=$((BRANCH_COUNT + 1))
+
   trufflehog git "file://." \
     --branch "origin/$branch" \
     --json \
     --no-update \
-    2>/dev/null >> "$ALL_FINDINGS_FILE" || true
+    2>/dev/null \
+  | python3 -c "
+import sys, json
+branch = '$branch'
+for line in sys.stdin:
+    line = line.strip()
+    if not line:
+        continue
+    try:
+        obj = json.loads(line)
+        obj.setdefault('SourceMetadata', {}).setdefault('Data', {}).setdefault('Git', {})['branch'] = branch
+        print(json.dumps(obj))
+    except Exception:
+        pass
+" >> "$ALL_FINDINGS_FILE" || true
 done <<< "$BRANCHES"
 
-echo "[cron-scan] Scanned $BRANCH_COUNT branch(es)"
-
-# ── Deduplicate by raw secret value ───────────────────────────────────────
-python3 .github/scripts/cron-dedup.py
-
-TOTAL=$(python3 -c "import json; print(len(json.load(open('findings-deduped.json'))))" 2>/dev/null || echo "0")
-echo "total_findings=$TOTAL"      >> "$GITHUB_OUTPUT"
+COUNT=$(grep -c '"DetectorName"' "$ALL_FINDINGS_FILE" 2>/dev/null || true)
+COUNT=${COUNT:-0}
+echo "total_findings=$COUNT"      >> "$GITHUB_OUTPUT"
 echo "branch_count=$BRANCH_COUNT" >> "$GITHUB_OUTPUT"
-echo "[cron-scan] $TOTAL unique finding(s) after dedup"
+echo "[cron-scan] $BRANCH_COUNT branch(es) scanned, $COUNT finding(s)"
