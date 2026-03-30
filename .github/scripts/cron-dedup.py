@@ -33,7 +33,8 @@ with open("all-findings.ndjson") as f:
         entry = {
             "branch": git.get("branch", "unknown"),
             "file":   git.get("file",   "unknown"),
-            "commit": (git.get("commit") or "")[:8],
+            "commit": git.get("commit") or "",
+            "line":   git.get("line",   0),
         }
 
         if key not in first_occurrence:
