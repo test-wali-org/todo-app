@@ -14,6 +14,7 @@ trufflehog git "file://." \
   --no-update \
   2>/dev/null > trufflehog-results.ndjson || true
 
-COUNT=$(grep -c '"DetectorName"' trufflehog-results.ndjson 2>/dev/null || echo "0")
+COUNT=$(grep -c '"DetectorName"' trufflehog-results.ndjson 2>/dev/null || true)
+COUNT=${COUNT:-0}
 echo "findings_count=$COUNT" >> "$GITHUB_OUTPUT"
 echo "[pr-scan] TruffleHog: $COUNT raw finding(s)"
